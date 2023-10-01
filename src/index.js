@@ -10,6 +10,7 @@ const KEY = '39758171-454faa2ce1768c54f925ff819';
 let query = '';
 let page = 1;
 let simpleLightBox;
+let allPagesLoaded = false;
 const perPage = 40;
 
 searchForm.addEventListener('submit', onSearchForm);
@@ -82,25 +83,33 @@ function onSearchForm(e) {
 }
 
 function onloadMore() {
+  if (allPagesLoaded) {
+    return;
+  }
   page += 1;
   simpleLightBox.destroy();
 
-
   fetchImages(query, page, perPage)
     .then(data => {
-      renderGallery(data.hits);
-      simpleLightBox = new SimpleLightbox('.gallery a').refresh();
+      if (data.hits.length === 0) {
+        allPagesLoaded = true;
+      } else {
+        renderGallery(data.hits);
+        simpleLightBox = new SimpleLightbox('.gallery a').refresh();
 
-      const totalPages = Math.ceil(data.totalHits / perPage);
+        const totalPages = Math.ceil(data.totalHits / perPage);
 
-      if (page > totalPages) {
-        Notiflix.Notify.failure(
-          "We're sorry, but you've reached the end of search results.",
-        );
+        if (page >= totalPages) {
+          allPagesLoaded = true;
+          Notiflix.Notify.failure(
+            "We're sorry, but you've reached the end of search results.",
+          );
+        }
       }
     })
     .catch(error => console.log(error));
 }
+
 
 function checkIfEndOfPage() {
   return (
