@@ -9,7 +9,7 @@ const KEY = '39758171-454faa2ce1768c54f925ff819';
 
 let query = '';
 let page = 1;
-let simpleLightBox;
+let simpleLightBox = new SimpleLightbox('.gallery a');
 let allPagesLoaded = false;
 const perPage = 40;
 
@@ -41,20 +41,21 @@ function renderGallery(images) {
 
   gallery.insertAdjacentHTML('beforeend', markup);
 
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
+  // const { height: cardHeight } = document
+  //   .querySelector('.gallery')
+  //   .firstElementChild.getBoundingClientRect();
 
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
+  // window.scrollBy({
+  //   top: cardHeight * 2,
+  //   behavior: 'smooth',
+  // });
 }
 
 function onSearchForm(e) {
   e.preventDefault();
   page = 1;
   query = e.currentTarget.elements.searchQuery.value.trim();
+  allPagesLoaded = false;
   gallery.innerHTML = '';
 
   if (query === '') {
@@ -72,7 +73,12 @@ function onSearchForm(e) {
         );
       } else {
         renderGallery(data.hits);
-        simpleLightBox = new SimpleLightbox('.gallery a').refresh();
+        const totalPages = Math.ceil(data.totalHits / perPage);
+
+        if (page >= totalPages) {
+          allPagesLoaded = true;
+        }
+        simpleLightBox.refresh();
         Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
       }
     })
@@ -87,7 +93,6 @@ function onloadMore() {
     return;
   }
   page += 1;
-  simpleLightBox.destroy();
 
   fetchImages(query, page, perPage)
     .then(data => {
@@ -95,7 +100,7 @@ function onloadMore() {
         allPagesLoaded = true;
       } else {
         renderGallery(data.hits);
-        simpleLightBox = new SimpleLightbox('.gallery a').refresh();
+        simpleLightBox.refresh();
 
         const totalPages = Math.ceil(data.totalHits / perPage);
 
@@ -105,6 +110,7 @@ function onloadMore() {
             "We're sorry, but you've reached the end of search results.",
           );
         }
+        
       }
     })
     .catch(error => console.log(error));
@@ -113,7 +119,7 @@ function onloadMore() {
 
 function checkIfEndOfPage() {
   return (
-    window.innerHeight + window.pageYOffset >=
+    window.innerHeight + window.scrollY >=
     document.documentElement.scrollHeight
   );
 }
